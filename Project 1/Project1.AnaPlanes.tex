@@ -1,0 +1,331 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\author{Ana Planes Hernandez.\\ github.com/anaplanes}
+\title{Project 1. \\
+FYS3150. Computational Physics.}
+\date{September 9, 2019}
+\begin{document}
+	\maketitle
+\section*{\small ABSTRACT}
+The purpose of this project is to solve the one dimensional Poisson equation with Dirichlet boundary conditions, dealing with matrix operations and relative errors in order to get familiar with the aspects of numerical derivation and linear algebra, making use of memory handling in the program.
+\section*{\small INTRODUCTION}
+The Poisson equation is a partial differential equation widely used in several fields of physics, such as electromagnetism, to calculate the potential field of a charge. In this project, it will be solved as a one dimensional equation, using two different methods.\\ First, it will be rewritten it in terms of a tridiagonal matrix to set an algorithm based on Gaussian elimination with the intention to find a numerical solution for the problem, aditionally discussing errors where the efficiency of the program will be tested. The second method consists of LU decomposition, which will be compared to the first algorithm in terms of floating point operations, checking the suitability of both methods for the present case.
+
+\section*{\small ALGORITHMS}
+In order to solve the one dimensional Poisson equation,
+\begin{center}
+$ - u '' (x) = f (x) $ 
+\end{center}
+with the conditions $ x e (0,1), u(0)=u(1)=0$ , it will first be rewtitten using a discretised approximation of the second derivative. \\
+The aproximation is defined with grid points $x_{i}=ih$ from $x_{0}=0$ to $x_{n+1}=1$. The stepsize is $h=1/(n+1)$ and the boundary conditions $u_{0}=u_{n+1}=0$ \\ 
+\begin{center}
+$f_{i}=\dfrac{u_{i+1}+u_{i-1}-2u_{i}}{h^{2}}$        
+$i=1,...n$ 
+\end{center}
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=14cm]{../../fig1}
+	\caption{Function discretisation}
+	\label{fig:fig1}
+\end{figure}
+Now, \\ \\
+if $i=1$ , $f_{1} = \dfrac{ u_{2}+u_{0}-2u_{1}}{h^{2}}$\\ \\
+if $i=2$ , $f_{2} = \dfrac{ u_{3}+u_{1}-2u_{2}}{h^{2}}$ \\ \\
+if $i=n-1$ , $f_{1} = \dfrac{ u_{n}+u_{n+2}-2u_{n-1}}{h^{2}}$ \\ \\ \\
+in summary, we can rewrite it in terms of a matrix \\
+\begin{center}
+	$ A u = g $ 
+\end{center}
+where $g=h^{2} f_{i}$ \\  
+\begin{center}
+$\begin{bmatrix} 
+	2 & -1 & 0 & 0& ... \\
+	-1 & 2 & -1 & 0 & ... \\
+	0 & -1 & 2 & -1 & ...\\
+	... & 0 & -1 & ... & ... \\
+	... & ... & ... & ... & -1\\
+	... & ... & ... & -1 & 2\\
+\end{bmatrix}$
+$\begin{bmatrix}
+	u_{1}\\
+	u_{2}\\
+	.\\
+	.\\
+	.\\
+	u_{n}\\
+\end{bmatrix}$
+$=$
+$\begin{bmatrix}
+	g_{1}\\
+	g_{2}\\
+	.\\
+	.\\
+	.\\
+	g_{n}\\
+\end{bmatrix}$ 
+\end{center} 
+In order to resolve the equations and find the desired solution, we need to develop an algorithm, the \textbf{Gaussian elimination}, which is a method for solving a system of linear equations, by modifying the matrix so that all of the entries except for those in the diagonal are removed to be able to solve the equations in an immediate way. \\ 
+To make it simpler, we will consider a 4x4 matrix. Consequently, we are left with the following equation: 
+\begin{center}
+$\begin{bmatrix} 
+d_{1} & c_{1} & 0 & 0 \\
+a_{1}& d_{2} & c_{2} & 0  \\
+0 & a_{2} & d_{3} & c_{3}\\
+0 & 0 & a_{3} & d_{4} \\
+\end{bmatrix}$
+$\begin{bmatrix}
+u_{1}\\
+u_{2}\\
+u_{3}\\
+u_{4}\\
+\end{bmatrix}$
+$=$
+$\begin{bmatrix}
+g_{1}\\
+g_{2}\\
+g_{3}\\
+g_{4}\\
+\end{bmatrix}$   
+\end{center} 
+\begin{center}
+$ d_{1}u_{1} + c_{1}u_{2} + 0 + 0 = g _ {1} $ \\
+$ a_{1}u_{1}+d_{2}+ c_{2}u_{3} + 0 = g_{2} $ \\
+$ 0 +  a_{2}u_{2}+d_{3}u_{3}+c_{3}u_{4} = g_{3} $\\
+$ 0 + 0 + a_{3}u_{3}+d_{4}u_{4}=g_{4}$ \\
+\end{center} 
+There are two steps for Gaussian elimination: forward substitution and backward substitution. \\
+The purpose of the forward substitution is to modify the matrix so that we will have an upper tridiagonal matrix. \\ We start by multiplying the first equation so as to remove the first term, bearing in mind that all of the other terms will be modified as well once we do it. Then, we repeat the same steps for the next few rows in the matrix. \\ \\
+Hence, we multiply the first equation by $\dfrac{c_{1}}{d_{1}}$, and subtract the second and first row, which will modify the matrix so that: \\ \\ 
+\begin{center}
+	$\begin{bmatrix} 
+	d_{1} & c_{1} & 0 & 0 \\
+	0& d'_{2} & c_{2} & 0  \\
+	0 & a_{2} & d'_{3} & c_{3}\\
+	0 & 0 & a_{3} & d'_{4} \\
+	\end{bmatrix}$
+	$\begin{bmatrix}
+	u_{1}\\
+	u_{2}\\
+	u_{3}\\
+	u_{4}\\
+	\end{bmatrix}$
+	$=$
+	$\begin{bmatrix}
+	g_{1}\\
+	g'_{2}\\
+	g'_{3}\\
+	g'_{4}\\
+	\end{bmatrix}$ \\  \\ 
+\end{center} 
+obtaining:
+\begin{center}
+$	d'_{2}= d_{2} - \dfrac{a_{1}c_{1}}{d_{1}}$\\
+$ g'_{2} = g_{2} - g_{1} \dfrac{a_{1}}{d_{1}}$ 
+\end{center}
+If we multiply the third row by $ \dfrac{e_{2}}{d'_{2}}$ and subtract once more, we obtain a similar pattern for the modified elements of the matrix. \\
+\begin{center}
+	$	d'_{3}= d_{3} - \dfrac{ a_{2}c_{2} }{d'_{2}}$\\
+	$ g'_{3} = g_{3} - g_{2} \dfrac{a_{2}}{d'_{2}}$
+\end{center}
+Generalising, the algorithm needed to carry out the forward substitution is the following: 
+\begin{center}
+$ d'_{i}    = d_{i} - \dfrac{ a_{i-1}c_{i-1} }{ d'_{i-1} }   $ 
+\end{center}
+\begin{center}
+$ g'_{i}=g_{i} - \dfrac{g'_{i-1}a_{i-1}}{d'_{i-1}} $. 
+\end{center}
+\begin{center}
+$ d'_{1}=d_{1}$
+\end{center}
+In Phyton, the algorithm may be written in the following way:  \\
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=14cm]{../../forsubb}
+	\caption{Forward substitution}
+	\label{fig:forsubb}
+\end{figure} \\ \\
+The agorithm for the backward substitution is quite similar. The objective is, by working with the already modified matrix, to turn it into a lower triangular matrix. \\
+After performing the forward substitution, we have: 
+\begin{center}
+	$\begin{bmatrix}
+		d_{1}&c_{1}&0&0\\
+		0&d'_{2}&c_{2}&0\\
+		0&0&d'_{3}&c_{3}\\
+		0&0&0&d'_{4}\\
+	\end{bmatrix}$
+\end{center}
+We seek to remove the remaining c's up the diagonal, by multiplying the remaining elements repeatedly.\\
+The algorithm needed to do this is: \\
+ \begin{center}
+	$u_{i } = \dfrac{g'_{i} - c_{i}u_{i+1}}{d'_{i}}$
+\end{center}
+In Phyton, the backward substitution can be written as:\\
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=14cm]{../../backsyb}
+	\caption{Backward substitution}
+	\label{fig:backsyb}
+\end{figure} \\
+If we now consider a particular case in which the elements up and down the diagonal are equal, things may be simplified, but the algorithm is esentially the same.
+\begin{center}
+	$\begin{bmatrix} 
+	d_{1} & e_{1} & 0 & 0 \\
+	e_{1}& d_{2} & e_{2} & 0  \\
+	0 & e_{2} & d_{3} & e_{3}\\
+	0 & 0 & e_{3} & d_{4} \\
+	\end{bmatrix}$
+	$\begin{bmatrix}
+	u_{1}\\
+	u_{2}\\
+	u_{3}\\
+	u_{4}\\
+	\end{bmatrix}$
+	$=$
+	$\begin{bmatrix}
+	g_{1}\\
+	g_{2}\\
+	g_{3}\\
+	g_{4}\\
+	\end{bmatrix}$ \\   
+\end{center} 
+\begin{center}
+	$ d_{1}u_{1} + e_{1}a_{2} + 0 + 0 = g _ {1} $ \\
+	$ e_{1}u_{1}+d_{2}+ e_{2}u_{3} + 0 = g_{2} $ \\
+	$ 0 +  e_{2}u_{2}+d_{3}u_{3}+e_{3}u_{4} = g_{3} $\\
+	$ 0 + 0 + e_{3}u_{3}+d_{4}u_{4}=g_{4}$
+\end{center}
+The algorithm for the forward substitution in this case will be:
+\begin{center}
+	$ d'_{i}    = d_{i} - \dfrac{ e_{i-1}^2 }{ d'_{i-1} }   $ 
+\end{center}
+\begin{center}
+	$ g'_{i}=g_{i} - \dfrac{g'_{i-1}e_{i-1}}{d'_{i-1}} $. 
+\end{center}
+\begin{center}
+	$ d'_{1}=d_{1}$
+\end{center}
+And for backward substitution:
+\begin{center}
+	$u_{i } = \dfrac{g'_{i} - e_{i}u_{i+1}}{d'_{i}}$
+\end{center}
+The same results are obtained, but this second way is more effective, as the number of floating points is reduced.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=14cm]{../../c}
+	\caption{A different option}
+	\label{fig:c}
+\end{figure} \\ \\ 
+The \textbf{LU decomposition} method consists of rewriting our matrix $A$ as a product of two different matrices, a lower triangular one, $L$, and an upper triangular one, $U$ in order to simplify the resolution of the equation.
+\begin{center}
+	$\begin{bmatrix} 
+	a_{11} & a_{12} & a_{13} & a_{14} \\
+	a_{21}& a_{22} & a_{23} & a_{24}  \\
+	a_{31} & a_{32} & a_{33} & a_{34}\\
+	a_{41} & a_{42} & a_{43} & a_{44} \\
+	\end{bmatrix}$
+	$=$
+	$\begin{bmatrix}
+	l_{11}&0&0&0\\
+	l_{21}&l_{22}&0&0\\
+	l_{31}&l_{32}&l_{33}&0\\
+	l_{41}&l_{42}&l_{43}&l_{44}\\
+	\end{bmatrix}$
+	$\begin{bmatrix}
+	u_{11}&u_{12}&u_{13}&u_{14}\\
+	0&u_{22}&u_{23}&u_{24}\\
+	0&0&u_{33}&u_{34}\\
+	0&0&0&u_{44}\\
+	\end{bmatrix}$ 
+\end{center}
+if we normalise so that $l_{11}=l_{22}=l_{33}=l_{44}$, two equations need to be solved:
+\begin{center}
+$LZ = y $ \\
+$Ux = Z$ \\
+\end{center}
+First, we resolve the first one iterating forwards.
+\begin{center}
+	$\begin{bmatrix}
+	l_{11}&0&0&0\\
+	l_{21}&l_{22}&0&0\\
+	l_{31}&l_{32}&l_{33}&0\\
+	l_{41}&l_{42}&l_{43}&l_{44}\\
+	\end{bmatrix}$
+	$=$
+	$\begin{bmatrix}
+	z_{1}\\
+	z_{2}\\
+	z_{3}\\
+	z_{4}\\
+	\end{bmatrix}$
+	$\begin{bmatrix}
+	y_{1}\\
+	y_{2}\\
+	y_{3}\\
+	y_{4}\\
+	\end{bmatrix}$ \\   
+\end{center}
+\begin{center}
+$ z_{1}=y_{1}$\\
+$l_{21}z_{1}+z_{2} = y_{2}$\\
+$l_{31}z_{1}+l_{32}z_{2} + z_{3}=y_{3}$\\
+$l_{41}z_{4}+l_{42}z_{2}+l_{43}z_{3}+z_{4}=y_{4}$\\ 
+\end{center}
+once the matrix Z is found, we proceed to find the matrix X working backwards.
+\begin{center}
+	$\begin{bmatrix}
+	u_{11}&u_{12}&u_{13}&u_{14}\\
+	0&u_{22}&u_{23}&u_{24}\\
+	0&0&u_{33}&u_{34}\\
+	0&0&0&u_{44}\\
+	\end{bmatrix}$ 
+	$=$
+	$\begin{bmatrix}
+	x_{1}\\
+	x_{2}\\
+	x_{3}\\
+	x_{4}\\
+	\end{bmatrix}$
+	$\begin{bmatrix}
+	z_{1}\\
+	z_{2}\\
+	z_{3}\\
+	z_{4}\\
+	\end{bmatrix}$ \\  
+\end{center}
+\section*{\small RESUTS}
+Carrying out the Gaussian elimination method, we obtain very similar results for the numerical and analytical solution of the problem. A plot is attached to show it in a more graphical way.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=8cm]{"PLOTCOMP N10"}
+	\caption{Plot for n=10}
+	\label{fig:plotcomp-n10}
+\end{figure}
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=8cm]{"PLOTCOMP N100"}
+	\caption{Plot for n=100}
+	\label{fig:plotcomp-n100}
+\end{figure} \\
+We can observe how much better the results are when n is bigger. \\
+Now, we represent the maximum relative error as a function of $log_{10}(h)$. As we make h small, the error goes down. However, there's a certain point where, if we make h even smaller, the relative error will start going up again. \\
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=8cm]{relativerror}
+	\caption{Plot for n=100}
+	\label{fig:relativerror}
+\end{figure}
+ \\ \\ The number of floating points needed for Gaussian elimination is $O(8n)$, while if we use LU decomposition the flops are $O(\dfrac{2}{3}n^{3})$. Therefore, the Gaussian elimination method is much more efficient than the LU decomposition method.
+
+\section*{\small CONCLUSION}
+In this project, we have studied two important methods to solve a set of linear equations, being able to see the pros and cons of each one.\\ By the results we have obtained, we can conclude that Gaussian elimination is a much more efficient and suitable algorithm than LU decomposition when it comes to solving linear equations. The fact that LU requires a higher number of floating points decreases the performance of the algorithm, as it takes more time and memory to do the same thing as the Gaussian elimination.
+\section*{\small REFERENCES}
+
+[1] Hjorth-Jensen, M. (2015). \textit{Computational Physics. Lecture Notes 2015}. University of Oslo.
+
+
+
+\end{document}
